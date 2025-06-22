@@ -29,3 +29,4 @@ urllib3==1.26.20
 whitenoise==6.6.0
 # Uncomment if you need CORS support
 # django-cors-headers
+# rebuild
