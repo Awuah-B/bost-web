@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMC Export Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/bostapp/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">OMC Report Exporter</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <p>This tool exports OMC reports from BOST-KUMASI depot.</p>
+                            <p>Data is fetched for the previous day.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-3">
+                            <a href="{% url 'bostapp:export_csv' %}" class="btn btn-success btn-lg">
+                                <i class="bi bi-file-earmark-excel"></i> Export to CSV
+                            </a>
+                            <a href="{% url 'bostapp:preview_pdf' %}" class="btn btn-danger btn-lg">
+                                <i class="bi bi-file-earmark-pdf"></i> Preview PDF
+                            </a>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>About This Report</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul>
+                                        <li>Shows orders from BOST-KUMASI depot</li>
+                                        <li>Includes order date, number, products, volume, and pricing</li>
+                                        <li>Automatically filters empty rows and irrelevant data</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
