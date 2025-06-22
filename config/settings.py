@@ -11,8 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 import os 
-import dj_database_url
+
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,12 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8&y!e8z0thv)+%3-6@7admujb!2h6-(1z7y_^5@q&v6%mdwiba'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-...')  # Use SECRET_KEY from .env
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['.herokuapp.com', 'localhost', '127.0.0.1']  # Set to your domain in production
+# Update ALLOWED_HOSTS for Supabase deployment
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['localhost']
 
 
 # Application definition
@@ -80,14 +84,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'postgres'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',
+            'options': '-c statement_timeout=5000'
+        },
+        'CONN_MAX_AGE': 300
     }
 }
-
-# Database configuration for production (uses DATABASE_URL if set)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 
 # Password validation
@@ -142,3 +151,10 @@ X_FRAME_OPTIONS = 'DENY'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Optionally, add CORS settings if your frontend is hosted elsewhere
+# INSTALLED_APPS += ['corsheaders']
+# MIDDLEWARE.insert(1, 'corsheaders.middleware.CorsMiddleware')
+# CORS_ALLOWED_ORIGINS = [
+#     'https://your-frontend-domain.supabase.co',
+# ]
