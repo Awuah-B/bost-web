@@ -4,7 +4,7 @@ from django.views.decorators.http import require_http_methods
 from django.conf import settings
 import csv
 import json
-from datetime import datetime
+import datetime
 import os
 import pandas as pd
 from io import BytesIO
