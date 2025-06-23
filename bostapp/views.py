@@ -120,16 +120,16 @@ class PDFGenerator:
         try:
             if df is None or df.empty:
                 return None, "No data available for PDF generation"
-                
+                    
             pdf = FPDF(orientation='L')
             pdf.set_auto_page_break(auto=True, margin=15)
             pdf.add_page()
-            
+                
             # Title
             pdf.set_font(self.font, 'B', 16)
             pdf.cell(0, 10, title, ln=True, align='C')
             pdf.ln(10)
-            
+                
             # Calculate column widths
             pdf.set_font(self.font, size=10)
             col_widths = [
@@ -141,25 +141,25 @@ class PDFGenerator:
                     60  # Maximum column width
                 ) for col in df.columns
             ]
-            
+                
             # Header
             pdf.set_font(self.font, 'B', 10)
             for col, width in zip(df.columns, col_widths):
                 pdf.cell(width, 10, str(col), border=1, align='C')
             pdf.ln()
-            
+                
             # Rows
             pdf.set_font(self.font, size=10)
             for _, row in df.iterrows():
                 if pdf.get_y() + 10 > pdf.h - 15:
                     self._add_header_page(pdf, df, col_widths)
-                
+                    
                 for col, width in zip(df.columns, col_widths):
                     pdf.cell(width, 10, str(row[col]), border=1)
                 pdf.ln()
+                    
+            return pdf.output(dest='S'), None  # Remove .encode('latin1')
                 
-            return pdf.output(dest='S').encode('latin1'), None
-            
         except Exception as e:
             logger.error(f"PDF generation error: {str(e)}")
             return None, f"PDF generation failed: {str(e)}"
