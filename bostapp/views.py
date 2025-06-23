@@ -49,7 +49,7 @@ class DataFetcher:
             )
             response.raise_for_status()
             
-            return pd.read_excel(BytesIO(response.content), None
+            return pd.read_excel(BytesIO(response.content), None)
         except Exception as e:
             logger.error(f"Error fetching data: {str(e)}")
             return None, str(e)
