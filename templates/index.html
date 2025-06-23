@@ -26,11 +26,14 @@
                     <div class="card-body">
                         <p class="card-text">Click below to export data in different formats</p>
                         <div class="d-grid gap-2">
-                            <a href="{% url 'export_csv' %}" class="btn btn-primary">
+                            <a href="{% url 'bostapp:export_csv' %}" class="btn btn-primary">
                                 Export to CSV
                             </a>
-                            <a href="{% url 'preview_pdf' %}" class="btn btn-secondary">
+                            <a href="{% url 'bostapp:preview_pdf' %}" class="btn btn-secondary">
                                 Preview PDF
+                            </a>
+                            <a href="{% url 'bostapp:download_pdf' %}" class="btn btn-info">
+                                Download PDF
                             </a>
                         </div>
                     </div>
