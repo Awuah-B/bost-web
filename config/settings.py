@@ -30,9 +30,9 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-...')  # Use SECRET_KEY fr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# Update ALLOWED_HOSTS for Supabase deployment
-# Update ALLOWED_HOSTS for Render deployment
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Update ALLOWED_HOSTS for deployment
+# For Render, you need to include your Render domain
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
 # Application definition
 
@@ -144,9 +144,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Security settings
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
-SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
-CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True').lower() == 'true'
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() == 'true'
 X_FRAME_OPTIONS = 'DENY'
 
 
@@ -154,9 +154,6 @@ X_FRAME_OPTIONS = 'DENY'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# Temporary settings for development
-# Remove these in production
-DEBUG = False
 
 # Optionally, add CORS settings if your frontend is hosted elsewhere
 if os.getenv('CORS_ALLOWED_ORIGINS'):
