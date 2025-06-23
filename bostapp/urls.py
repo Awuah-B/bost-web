@@ -1,11 +1,18 @@
-from django.urls import path
-from .views import home, export_csv, preview_pdf, download_pdf
+from django.contrib import admin
+from django.urls import path, include
+from django.http import HttpResponse
+from bostapp import views
 
-app_name = 'bostapp'  # This is REQUIRED for namespace functionality
+def simple_health_check(request):
+    """Simple health check that doesn't depend on external services"""
+    return HttpResponse("OK", status=200, content_type='text/plain')
 
 urlpatterns = [
-    path('', home, name='home'),
-    path('export-csv/', export_csv, name='export_csv'),
-    path('preview-pdf/', preview_pdf, name='preview_pdf'),
-    path('download-pdf/', download_pdf, name='download_pdf'),
+    path('admin/', admin.site.urls),
+    path('', views.home, name='home'),
+    path('export-csv/', views.export_csv, name='export_csv'),
+    path('preview-pdf/', views.preview_pdf, name='preview_pdf'),
+    path('download-pdf/', views.download_pdf, name='download_pdf'),
+    path('health/', views.health_check, name='health_check'),
+    path('simple-health/', simple_health_check, name='simple_health'),
 ]

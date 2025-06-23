@@ -1,11 +1,12 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from fpdf import FPDF
 import pandas as pd
 import requests
 from io import BytesIO
 import datetime
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class PDFGenerator:
     """Handles PDF generation from DataFrame"""
     
     def __init__(self):
-        self.font = "Helvetica"  # Use built-in font to avoid warnings
+        self.font = "Arial"  # Use Arial which is more reliable
         
     def generate(self, df, title):
         """Generate PDF from DataFrame"""
@@ -121,7 +122,7 @@ class PDFGenerator:
             if df is None or df.empty:
                 return None, "No data available for PDF generation"
                     
-            pdf = FPDF(orientation='L')
+            pdf = FPDF(orientation='L', unit='mm', format='A4')
             pdf.set_auto_page_break(auto=True, margin=15)
             pdf.add_page()
                 
@@ -131,96 +132,160 @@ class PDFGenerator:
             pdf.ln(10)
                 
             # Calculate column widths
-            pdf.set_font(self.font, size=10)
-            col_widths = [
-                min(
-                    max(
-                        pdf.get_string_width(str(col)) + 6,
-                        df[col].astype(str).apply(pdf.get_string_width).max() + 6
-                    ),
-                    60  # Maximum column width
-                ) for col in df.columns
-            ]
+            pdf.set_font(self.font, size=8)
+            page_width = pdf.w - 20  # Account for margins
+            num_cols = len(df.columns)
+            col_width = page_width / num_cols
+            
+            # Limit column width to reasonable size
+            col_widths = [min(col_width, 40) for _ in df.columns]
                 
             # Header
-            pdf.set_font(self.font, 'B', 10)
+            pdf.set_font(self.font, 'B', 8)
             for col, width in zip(df.columns, col_widths):
-                pdf.cell(width, 10, str(col), border=1, align='C')
+                # Truncate long column names
+                col_text = str(col)[:15] + "..." if len(str(col)) > 15 else str(col)
+                pdf.cell(width, 8, col_text, border=1, align='C')
             pdf.ln()
                 
             # Rows
-            pdf.set_font(self.font, size=10)
+            pdf.set_font(self.font, size=7)
             for _, row in df.iterrows():
-                if pdf.get_y() + 10 > pdf.h - 15:
+                if pdf.get_y() + 8 > pdf.h - 15:
                     self._add_header_page(pdf, df, col_widths)
                     
                 for col, width in zip(df.columns, col_widths):
-                    pdf.cell(width, 10, str(row[col]), border=1)
+                    # Truncate long cell values
+                    cell_text = str(row[col])[:20] + "..." if len(str(row[col])) > 20 else str(row[col])
+                    pdf.cell(width, 8, cell_text, border=1)
                 pdf.ln()
                     
-            return pdf.output(dest='S'), None  # Remove .encode('latin1')
+            # Use BytesIO to handle binary output properly
+            pdf_output = BytesIO()
+            pdf_string = pdf.output(dest='S')
+            
+            # Handle encoding properly
+            if isinstance(pdf_string, str):
+                pdf_output.write(pdf_string.encode('latin1'))
+            else:
+                pdf_output.write(pdf_string)
+            
+            pdf_output.seek(0)
+            return pdf_output.getvalue(), None
                 
         except Exception as e:
             logger.error(f"PDF generation error: {str(e)}")
+            logger.error(f"PDF generation traceback: {traceback.format_exc()}")
             return None, f"PDF generation failed: {str(e)}"
             
     def _add_header_page(self, pdf, df, col_widths):
         """Add new page with headers"""
-        pdf.add_page(orientation='L')
-        pdf.set_font(self.font, 'B', 10)
+        pdf.add_page()
+        pdf.set_font(self.font, 'B', 8)
         for col, width in zip(df.columns, col_widths):
-            pdf.cell(width, 10, str(col), border=1, align='C')
+            col_text = str(col)[:15] + "..." if len(str(col)) > 15 else str(col)
+            pdf.cell(width, 8, col_text, border=1, align='C')
         pdf.ln()
-        pdf.set_font(self.font, size=10)
+        pdf.set_font(self.font, size=7)
 
 def home(request):
-    return render(request, 'bostapp/index.html')
+    """Home view with error handling"""
+    try:
+        return render(request, 'bostapp/index.html')
+    except Exception as e:
+        logger.error(f"Home view error: {str(e)}")
+        logger.error(f"Home view traceback: {traceback.format_exc()}")
+        return HttpResponse("Application temporarily unavailable. Please try again later.", 
+                          status=500, content_type='text/plain')
 
 def export_csv(request):
-    fetcher = DataFetcher()
-    df, error = fetcher.fetch_data()
-    
-    if error:
-        return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
+    """Export CSV with comprehensive error handling"""
+    try:
+        fetcher = DataFetcher()
+        df, error = fetcher.fetch_data()
         
-    df, error = fetcher.process_data(df)
-    
-    if error:
-        return HttpResponse(f"Error: {error}", status=404, content_type='text/plain')
-    
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="omc_report.csv"'
-    df.to_csv(response, index=False)
-    return response
+        if error:
+            logger.error(f"CSV export fetch error: {error}")
+            return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
+            
+        df, error = fetcher.process_data(df)
+        
+        if error:
+            logger.error(f"CSV export process error: {error}")
+            return HttpResponse(f"Error: {error}", status=404, content_type='text/plain')
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="omc_report.csv"'
+        df.to_csv(response, index=False)
+        return response
+        
+    except Exception as e:
+        logger.error(f"CSV export unexpected error: {str(e)}")
+        logger.error(f"CSV export traceback: {traceback.format_exc()}")
+        return HttpResponse(f"Unexpected error: {str(e)}", status=500, content_type='text/plain')
 
 def generate_pdf_response(request, disposition='inline'):
-    fetcher = DataFetcher()
-    generator = PDFGenerator()
-    
-    # Fetch data
-    df, error = fetcher.fetch_data()
-    if error:
-        return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
+    """Generate PDF response with comprehensive error handling"""
+    try:
+        fetcher = DataFetcher()
+        generator = PDFGenerator()
         
-    # Process data
-    df, error = fetcher.process_data(df)
-    if error:
-        return HttpResponse(f"Error: {error}", status=404, content_type='text/plain')
-    
-    # Generate PDF
-    pdf_content, error = generator.generate(df, "DEPOT: BOST - KUMASI")
-    if error:
-        return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
-    
-    # Return response
-    response = HttpResponse(content_type='application/pdf')
-    filename = "omc_report.pdf"
-    response['Content-Disposition'] = f'{disposition}; filename="{filename}"'
-    response.write(pdf_content)
-    return response
+        # Fetch data
+        df, error = fetcher.fetch_data()
+        if error:
+            logger.error(f"PDF generation fetch error: {error}")
+            return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
+            
+        # Process data
+        df, error = fetcher.process_data(df)
+        if error:
+            logger.error(f"PDF generation process error: {error}")
+            return HttpResponse(f"Error: {error}", status=404, content_type='text/plain')
+        
+        # Generate PDF
+        pdf_content, error = generator.generate(df, "DEPOT: BOST - KUMASI")
+        if error:
+            logger.error(f"PDF generation error: {error}")
+            return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
+        
+        # Return response
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        filename = "omc_report.pdf"
+        response['Content-Disposition'] = f'{disposition}; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"PDF response unexpected error: {str(e)}")
+        logger.error(f"PDF response traceback: {traceback.format_exc()}")
+        return HttpResponse(f"Unexpected error: {str(e)}", status=500, content_type='text/plain')
 
 def preview_pdf(request):
-    return generate_pdf_response(request, disposition='inline')
+    """Preview PDF with error handling"""
+    try:
+        return generate_pdf_response(request, disposition='inline')
+    except Exception as e:
+        logger.error(f"PDF preview error: {str(e)}")
+        return HttpResponse(f"PDF preview error: {str(e)}", status=500, content_type='text/plain')
 
 def download_pdf(request):
-    return generate_pdf_response(request, disposition='attachment')
+    """Download PDF with error handling"""
+    try:
+        return generate_pdf_response(request, disposition='attachment')
+    except Exception as e:
+        logger.error(f"PDF download error: {str(e)}")
+        return HttpResponse(f"PDF download error: {str(e)}", status=500, content_type='text/plain')
+
+def health_check(request):
+    """Health check endpoint for debugging"""
+    try:
+        return JsonResponse({
+            'status': 'ok',
+            'timestamp': datetime.datetime.now().isoformat(),
+            'message': 'Application is running'
+        })
+    except Exception as e:
+        logger.error(f"Health check error: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'error': str(e)
+        }, status=500)

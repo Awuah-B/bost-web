@@ -1,0 +1,30 @@
+/* Add your custom styles for bostapp here */
+body {
+    background-color: #f5f5f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url("/static/2025-06-23 11.03.04.f91b3389b4c8.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.card {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+.btn-lg {
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    border-radius: 0.5rem;
+}
+
+.alert-info {
+    background-color: #e7f5ff;
+    border-color: #d0ebff;
+    color: #1864ab;
+}
+
+.card-header {
+    font-weight: 600;
+}
