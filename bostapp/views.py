@@ -182,30 +182,28 @@ def preview_pdf(request):
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         pdf.set_font("helvetica", size=12)
-        pdf.cell(0, 10, txt="PDF Debug: DataFrame rows: {}".format(len(df)), ln=True, align='C')
-        # Comment out the rest for debug
-        # # Add title
-        # pdf.cell(200, 10, txt="DEPOT: BOST - KUMASI", ln=True, align='C')
-        # # Calculate dynamic column width
-        # col_width = pdf.w / len(df.columns)
-        # row_height = 10
-        # # Add column headers
-        # for col in df.columns:
-        #     pdf.cell(col_width, row_height, txt=str(col), align="C")
-        # pdf.ln(row_height)
-        # # Add rows
-        # for _, row in df.iterrows():
-        #     if pdf.get_y() + row_height > pdf.h - 15:
-        #         pdf.add_page()
-        #         for col in df.columns:
-        #             pdf.cell(col_width, row_height, txt=str(col), align="C")
-        #         pdf.ln(row_height)
-        #     for col in df.columns:
-        #         cell_content = str(row[col])
-        #         pdf.cell(col_width, row_height, txt=cell_content, align="L")
-        #     pdf.ln(row_height)
+        # Add title
+        pdf.cell(200, 10, txt="DEPOT: BOST - KUMASI", ln=True, align='C')
+        # Calculate dynamic column width
+        col_width = pdf.w / len(df.columns)
+        row_height = 10
+        # Add column headers
+        for col in df.columns:
+            pdf.cell(col_width, row_height, txt=str(col), align="C")
+        pdf.ln(row_height)
+        # Add rows
+        for _, row in df.iterrows():
+            if pdf.get_y() + row_height > pdf.h - 15:
+                pdf.add_page()
+                for col in df.columns:
+                    pdf.cell(col_width, row_height, txt=str(col), align="C")
+                pdf.ln(row_height)
+            for col in df.columns:
+                cell_content = str(row[col])
+                pdf.cell(col_width, row_height, txt=cell_content, align="L")
+            pdf.ln(row_height)
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'inline; filename="omc_preview.pdf"'
+        response['Content-Disposition'] = 'attachment; filename="omc_report.pdf"'
         pdf_bytes = pdf.output(dest='S')
         if isinstance(pdf_bytes, str):
             pdf_bytes = pdf_bytes.encode('latin1')
@@ -213,16 +211,3 @@ def preview_pdf(request):
         return response
     except Exception as e:
         return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
-
-def test_pdf(request):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("helvetica", size=16)
-    pdf.cell(0, 10, txt="Test PDF - If you see this, PDF output works!", ln=True, align='C')
-    pdf_bytes = pdf.output(dest='S')
-    if isinstance(pdf_bytes, str):
-        pdf_bytes = pdf_bytes.encode('latin1')
-    response = HttpResponse(pdf_bytes, content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename="test.pdf"'
-    response['Content-Length'] = str(len(pdf_bytes))
-    return response
