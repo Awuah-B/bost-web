@@ -151,6 +151,9 @@ X_FRAME_OPTIONS = 'DENY'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Temporary settings for development
+# Remove these in production
+DEBUG = True
 
 # Optionally, add CORS settings if your frontend is hosted elsewhere
 if os.getenv('CORS_ALLOWED_ORIGINS'):
