@@ -78,16 +78,52 @@ class DataFetcher:
             # Remove empty rows and columns
             df = df[~df.apply(lambda row: all(val.strip() == '' for val in row), axis=1)]
             df = df.loc[:, ~df.apply(lambda col: all(val.strip() == '' for val in col), axis=0)]
+
+            # Delete rows which contain #Total
+            df = df[~df.apply(lambda row: any('Total #' in str(val) for val in row), axis=1)]
+
+            # Get the updated last column
+            last_column_name = df.columns[-1]
             
             # Filter for BOST-KUMASI records
             mask = df.apply(lambda row: any(
                 "BOST-KUMASI" in val or "BOST - KUMASI" in val 
                 for val in row
             ), axis=1)
+
+             # Flag rows with empty last column
+            empty_last_col_mask = df[last_column_name].str.strip().eq('')
+            # Combine masks to get rows meeting either condition
+            mask = mask | empty_last_col_mask
+            # Apply the mask to filter the DataFrame
+            if not mask.any():
+                return None, "No BOST-KUMASI records found"
             df = df[mask]
+
             
             if df.empty:
                 return None, "No BOST-KUMASI records found"
+            
+                # Drop column if exists
+            if 'Unnamed: 6' in df.columns:
+                df = df.drop(columns=['Unnamed: 6'])
+
+            # Merge columns if they exist
+            if 'Unnamed: 19' in df.columns and 'Unnamed: 20' in df.columns:
+                df = df.drop(columns=['Unnamed: 19', 'Unnamed: 20'])
+
+            # Handle rows where only first column has values
+            first_col = df.columns[0]
+            mask = df.apply(lambda row: (row != '').sum() == 1 and row[first_col] != '', axis=1)
+            if mask.any():
+                # Get rows where only first column has value
+                special_rows = df[mask].copy()
+                # Keep only first occurrence of each value in the first column
+                special_rows = special_rows.drop_duplicates(subset=[first_col], keep='first')
+                # Update the main dataframe
+                df = pd.concat([df[~mask], special_rows]).sort_index()
+                
+
             
             # Select and rename columns
             columns = {
