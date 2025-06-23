@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.conf import settings
 from fpdf import FPDF
 import pandas as pd
 import requests
@@ -45,18 +44,29 @@ class DataFetcher:
             response = requests.get(
                 "https://iml.npa-enterprise.com/NPAAPILIVE/Home/ExportDailyOrderReport",
                 headers=headers,
-                params=params
+                params=params,
+                timeout=30
             )
             response.raise_for_status()
             
-            return pd.read_excel(BytesIO(response.content), None)
+            df = pd.read_excel(BytesIO(response.content))
+            if df.empty:
+                return None, "Received empty data from API"
+            return df, None
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"API request failed: {str(e)}")
+            return None, f"Failed to fetch data: {str(e)}"
         except Exception as e:
-            logger.error(f"Error fetching data: {str(e)}")
-            return None, str(e)
+            logger.error(f"Unexpected error fetching data: {str(e)}")
+            return None, f"Unexpected error: {str(e)}"
 
     def process_data(self, df):
         """Process and clean the DataFrame"""
         try:
+            if df is None or df.empty:
+                return None, "No data to process"
+                
             # Skip header rows
             df = df.iloc[7:]
             
@@ -69,7 +79,14 @@ class DataFetcher:
             df = df.loc[:, ~df.apply(lambda col: all(val.strip() == '' for val in col), axis=0)]
             
             # Filter for BOST-KUMASI records
-            df = df[df.apply(lambda row: any("BOST-KUMASI" in val or "BOST - KUMASI" in val for val in row), axis=1)]
+            mask = df.apply(lambda row: any(
+                "BOST-KUMASI" in val or "BOST - KUMASI" in val 
+                for val in row
+            ), axis=1)
+            df = df[mask]
+            
+            if df.empty:
+                return None, "No BOST-KUMASI records found"
             
             # Select and rename columns
             columns = {
@@ -82,12 +99,15 @@ class DataFetcher:
                 'Unnamed: 15': 'BDC'
             }
             
-            df = df[list(columns.keys())].rename(columns=columns)
+            # Keep only columns that exist in the DataFrame
+            available_columns = [col for col in columns.keys() if col in df.columns]
+            df = df[available_columns].rename(columns=columns)
+            
             return df, None
             
         except Exception as e:
             logger.error(f"Error processing data: {str(e)}")
-            return None, str(e)
+            return None, f"Data processing error: {str(e)}"
 
 class PDFGenerator:
     """Handles PDF generation from DataFrame"""
@@ -98,6 +118,9 @@ class PDFGenerator:
     def generate(self, df, title):
         """Generate PDF from DataFrame"""
         try:
+            if df is None or df.empty:
+                return None, "No data available for PDF generation"
+                
             pdf = FPDF(orientation='L')
             pdf.set_auto_page_break(auto=True, margin=15)
             pdf.add_page()
@@ -110,9 +133,12 @@ class PDFGenerator:
             # Calculate column widths
             pdf.set_font(self.font, size=10)
             col_widths = [
-                max(
-                    pdf.get_string_width(str(col)) + 6,
-                    df[col].astype(str).apply(pdf.get_string_width).max() + 6
+                min(
+                    max(
+                        pdf.get_string_width(str(col)) + 6,
+                        df[col].astype(str).apply(pdf.get_string_width).max() + 6
+                    ),
+                    60  # Maximum column width
                 ) for col in df.columns
             ]
             
@@ -136,7 +162,7 @@ class PDFGenerator:
             
         except Exception as e:
             logger.error(f"PDF generation error: {str(e)}")
-            return None, str(e)
+            return None, f"PDF generation failed: {str(e)}"
             
     def _add_header_page(self, pdf, df, col_widths):
         """Add new page with headers"""
@@ -147,7 +173,6 @@ class PDFGenerator:
         pdf.ln()
         pdf.set_font(self.font, size=10)
 
-# View functions
 def home(request):
     return render(request, 'bostapp/index.html')
 
@@ -156,12 +181,12 @@ def export_csv(request):
     df, error = fetcher.fetch_data()
     
     if error:
-        return HttpResponse(f"Error fetching data: {error}", status=500)
+        return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
         
     df, error = fetcher.process_data(df)
     
-    if error or df is None or df.empty:
-        return HttpResponse("No data available for export", status=404)
+    if error:
+        return HttpResponse(f"Error: {error}", status=404, content_type='text/plain')
     
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="omc_report.csv"'
@@ -172,18 +197,22 @@ def generate_pdf_response(request, disposition='inline'):
     fetcher = DataFetcher()
     generator = PDFGenerator()
     
+    # Fetch data
     df, error = fetcher.fetch_data()
     if error:
-        return HttpResponse(f"Error fetching data: {error}", status=500)
+        return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
         
+    # Process data
     df, error = fetcher.process_data(df)
-    if error or df is None or df.empty:
-        return HttpResponse("No data available for PDF", status=404)
+    if error:
+        return HttpResponse(f"Error: {error}", status=404, content_type='text/plain')
     
+    # Generate PDF
     pdf_content, error = generator.generate(df, "DEPOT: BOST - KUMASI")
     if error:
-        return HttpResponse(f"Error generating PDF: {error}", status=500)
+        return HttpResponse(f"Error: {error}", status=500, content_type='text/plain')
     
+    # Return response
     response = HttpResponse(content_type='application/pdf')
     filename = "omc_report.pdf"
     response['Content-Disposition'] = f'{disposition}; filename="{filename}"'
