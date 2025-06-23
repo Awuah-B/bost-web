@@ -153,7 +153,7 @@ X_FRAME_OPTIONS = 'DENY'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Temporary settings for development
 # Remove these in production
-DEBUG = True
+DEBUG = False
 
 # Optionally, add CORS settings if your frontend is hosted elsewhere
 if os.getenv('CORS_ALLOWED_ORIGINS'):
