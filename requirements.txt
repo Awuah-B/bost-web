@@ -1,10 +1,11 @@
+setuptools<70.0.0
+wheel>=0.43.0
 asgiref==3.8.1
 certifi==2025.6.15
 charset-normalizer==3.4.2
 decouple
 defusedxml==0.7.1
 dj-database-url
-# dj-database-url version can be pinned if needed
 Django>=4.2,<5.0
 et_xmlfile==2.0.0
 fonttools==4.58.4
@@ -12,7 +13,7 @@ fpdf==1.7.2
 fpdf2==2.7.4
 gunicorn==22.0.0
 idna==3.10
-numpy==1.24.4
+numpy>=2.0.0  
 openpyxl==3.1.2
 packaging==25.0
 pandas==2.0.3
@@ -27,10 +28,3 @@ typing_extensions==4.14.0
 tzdata==2025.2
 urllib3==1.26.20
 whitenoise==6.6.0
-setuptools
-wheel
-# Uncomment if you need CORS support
-# django-cors-headers
-# rebuild
-# rebuild
-# rebuild
