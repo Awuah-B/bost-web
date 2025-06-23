@@ -1,6 +1,7 @@
 setuptools<70.0.0
 wheel>=0.43.0
 python-decouple==3.8
+python-dotenv==1.0.1
 asgiref==3.8.1
 certifi==2025.6.15
 charset-normalizer==3.4.2
