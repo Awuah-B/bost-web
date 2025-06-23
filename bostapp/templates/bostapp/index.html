@@ -17,17 +17,6 @@
             background-attachment: fixed;
             background-position: center;
         }
-        .container {
-            background: rgba(255, 255, 255, 0.7); /* semi-transparent white */
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
         .button-group {
             display: flex;
             flex-direction: column;
@@ -60,28 +49,15 @@
         .btn-success:hover {
             background-color: #1e7e34;
         }
-        .status {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-        }
-        .status-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>BOST - KUMASI Reports</h1>
-        <div class="button-group">
-            <a href="/preview-pdf/" class="btn" target="_blank">Preview PDF Report</a>
-            <a href="/download-pdf/" class="btn btn-success">Download PDF Report</a>
-            <a href="/export-csv/" class="btn btn-secondary">Download CSV Report</a>
-            <a href="/health/" class="btn btn-secondary">Health Check</a>
-        </div>
+    <h1 style="color:#333; text-align:center; margin-bottom:30px;">BOST - KUMASI Reports</h1>
+    <div class="button-group">
+        <a href="/preview-pdf/" class="btn" target="_blank">Preview PDF Report</a>
+        <a href="/download-pdf/" class="btn btn-success">Download PDF Report</a>
+        <a href="/export-csv/" class="btn btn-secondary">Download CSV Report</a>
+        <a href="/health/" class="btn btn-secondary">Health Check</a>
     </div>
     <div style="text-align:center; margin-top:40px; color:#b71c1c; font-weight:bold; font-size:1.1em;">
         This page is <u>not authorised</u> by NPA or any official body.<br>
