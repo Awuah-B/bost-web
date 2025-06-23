@@ -219,10 +219,10 @@ def test_pdf(request):
     pdf.add_page()
     pdf.set_font("helvetica", size=16)
     pdf.cell(0, 10, txt="Test PDF - If you see this, PDF output works!", ln=True, align='C')
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename="test.pdf"'
     pdf_bytes = pdf.output(dest='S')
     if isinstance(pdf_bytes, str):
         pdf_bytes = pdf_bytes.encode('latin1')
-    response.write(pdf_bytes)
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="test.pdf"'
+    response['Content-Length'] = str(len(pdf_bytes))
     return response
