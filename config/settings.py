@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-...')  # Use SECRET_KEY from .env
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # Update ALLOWED_HOSTS for Supabase deployment
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['localhost']
@@ -135,20 +135,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'bostapp/static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static', 'bostapp')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Security settings
-#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-#SECURE_SSL_REDIRECT = True
-#SESSION_COOKIE_SECURE = True
-#CSRF_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True').lower() == 'true'
 X_FRAME_OPTIONS = 'DENY'
-#Temporarily disable security settings for debugging
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
 
 
 # Default primary key field type
@@ -156,12 +152,8 @@ CSRF_COOKIE_SECURE = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Set DEBUG to True temporarily to see error details
-DEBUG = True
-
 # Optionally, add CORS settings if your frontend is hosted elsewhere
-# INSTALLED_APPS += ['corsheaders']
-# MIDDLEWARE.insert(1, 'corsheaders.middleware.CorsMiddleware')
-# CORS_ALLOWED_ORIGINS = [
-#     'https://your-frontend-domain.supabase.co',
-# ]
+if os.getenv('CORS_ALLOWED_ORIGINS'):
+    INSTALLED_APPS += ['corsheaders']
+    MIDDLEWARE.insert(1, 'corsheaders.middleware.CorsMiddleware')
+    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split(',')
