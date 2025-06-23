@@ -1,10 +1,9 @@
 from django.urls import path
-from . import views
-
-app_name = 'bostapp'
+from .views import home, export_csv, preview_pdf, download_pdf
 
 urlpatterns = [
-    path('', views.home, name='index'),
-    path('export-pdf/', views.preview_pdf, name='export_pdf'),  # Use preview_pdf for export-pdf
-    path('export-csv/', views.export_csv, name='export_csv'),
+    path('', home, name='home'),
+    path('export-csv/', export_csv, name='export_csv'),
+    path('preview-pdf/', preview_pdf, name='preview_pdf'),
+    path('download-pdf/', download_pdf, name='download_pdf'),
 ]

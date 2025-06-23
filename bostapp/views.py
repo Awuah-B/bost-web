@@ -152,6 +152,9 @@ class RequestSeek:
         }
         df = df.rename(columns=rename_map)
         
+        # Keep only the renamed columns
+        df = df[list(rename_map.values())]
+        
         return df
 
 def home(request):
@@ -178,36 +181,122 @@ def preview_pdf(request):
         return HttpResponse("No data available for PDF", status=404)
     
     try:
-        pdf = FPDF()
+        # Create PDF with landscape orientation
+        pdf = FPDF(orientation='L')  # Landscape mode
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
-        pdf.set_font("helvetica", size=12)
-        # Add title
-        pdf.cell(200, 10, txt="DEPOT: BOST - KUMASI", ln=True, align='C')
-        # Calculate dynamic column width
-        col_width = pdf.w / len(df.columns)
-        row_height = 10
-        # Add column headers
+        
+        # Set font and title
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, "DEPOT: BOST - KUMASI", ln=True, align='C')
+        pdf.ln(10)  # Add some space
+        
+        # Set table font
+        pdf.set_font("Arial", size=10)
+        
+        # Calculate column widths based on content
+        col_widths = []
         for col in df.columns:
-            pdf.cell(col_width, row_height, txt=str(col), align="C")
-        pdf.ln(row_height)
-        # Add rows
+            # Get max width needed for this column
+            max_len = max(
+                pdf.get_string_width(str(col)),  # Header width
+                df[col].astype(str).apply(pdf.get_string_width).max()  # Data width
+            )
+            col_widths.append(min(max_len + 6, 60))  # Add padding, cap at 60
+        
+        # Header row
+        pdf.set_fill_color(200, 220, 255)
+        for i, col in enumerate(df.columns):
+            pdf.cell(col_widths[i], 10, str(col), border=1, fill=True)
+        pdf.ln()
+        
+        # Data rows
+        pdf.set_fill_color(255, 255, 255)
         for _, row in df.iterrows():
-            if pdf.get_y() + row_height > pdf.h - 15:
-                pdf.add_page()
-                for col in df.columns:
-                    pdf.cell(col_width, row_height, txt=str(col), align="C")
-                pdf.ln(row_height)
-            for col in df.columns:
+            # Check if we need a new page
+            if pdf.get_y() + 10 > pdf.h - 15:
+                pdf.add_page(orientation='L')
+                # Reprint header
+                pdf.set_font("Arial", 'B', 10)
+                for i, col in enumerate(df.columns):
+                    pdf.cell(col_widths[i], 10, str(col), border=1, fill=True)
+                pdf.ln()
+                pdf.set_font("Arial", size=10)
+                
+            for i, col in enumerate(df.columns):
                 cell_content = str(row[col])
-                pdf.cell(col_width, row_height, txt=cell_content, align="L")
-            pdf.ln(row_height)
+                pdf.cell(col_widths[i], 10, cell_content, border=1)
+            pdf.ln()
+        
+        # Prepare response
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="omc_report.pdf"'
+        response.write(pdf.output(dest='S').encode('latin1'))
+        return response
+        
+    except Exception as e:
+        return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
+
+def download_pdf(request):
+    download = RequestSeek()
+    df = download.custom_formatting()
+    
+    if df is None or df.empty:
+        return HttpResponse("No data available for PDF", status=404)
+    
+    try:
+        # Create PDF with landscape orientation
+        pdf = FPDF(orientation='L')  # Landscape mode
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        
+        # Set font and title
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, "DEPOT: BOST - KUMASI", ln=True, align='C')
+        pdf.ln(10)  # Add some space
+        
+        # Set table font
+        pdf.set_font("Arial", size=10)
+        
+        # Calculate column widths based on content
+        col_widths = []
+        for col in df.columns:
+            # Get max width needed for this column
+            max_len = max(
+                pdf.get_string_width(str(col)),  # Header width
+                df[col].astype(str).apply(pdf.get_string_width).max()  # Data width
+            )
+            col_widths.append(min(max_len + 6, 60))  # Add padding, cap at 60
+        
+        # Header row
+        pdf.set_fill_color(200, 220, 255)
+        for i, col in enumerate(df.columns):
+            pdf.cell(col_widths[i], 10, str(col), border=1, fill=True)
+        pdf.ln()
+        
+        # Data rows
+        pdf.set_fill_color(255, 255, 255)
+        for _, row in df.iterrows():
+            # Check if we need a new page
+            if pdf.get_y() + 10 > pdf.h - 15:
+                pdf.add_page(orientation='L')
+                # Reprint header
+                pdf.set_font("Arial", 'B', 10)
+                for i, col in enumerate(df.columns):
+                    pdf.cell(col_widths[i], 10, str(col), border=1, fill=True)
+                pdf.ln()
+                pdf.set_font("Arial", size=10)
+                
+            for i, col in enumerate(df.columns):
+                cell_content = str(row[col])
+                pdf.cell(col_widths[i], 10, cell_content, border=1)
+            pdf.ln()
+        
+        # Prepare response for download
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="omc_report.pdf"'
-        pdf_bytes = pdf.output(dest='S')
-        if isinstance(pdf_bytes, str):
-            pdf_bytes = pdf_bytes.encode('latin1')
-        response.write(pdf_bytes)
+        response.write(pdf.output(dest='S').encode('latin1'))
         return response
+        
     except Exception as e:
         return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
