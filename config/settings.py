@@ -31,8 +31,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-...')  # Use SECRET_KEY fr
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # Update ALLOWED_HOSTS for Supabase deployment
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['localhost']
-
+# Update ALLOWED_HOSTS for Render deployment
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 
