@@ -210,7 +210,7 @@ def preview_pdf(request):
 
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="omc_preview.pdf"'
-        response.write(pdf.output(dest='S').encode('latin1'))
+        response.write(pdf.output(dest='S').encode('latin1') if isinstance(pdf.output(dest='S'), str) else pdf.output(dest='S'))
         return response
         
     except Exception as e:
