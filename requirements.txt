@@ -1,5 +1,6 @@
-setuptools<70.0.0
-wheel>=0.43.0
+setuptools
+wheel
+python-dotenv
 asgiref==3.8.1
 certifi==2025.6.15
 charset-normalizer==3.4.2
@@ -13,7 +14,7 @@ fpdf==1.7.2
 fpdf2==2.7.4
 gunicorn==22.0.0
 idna==3.10
-numpy>=2.0.0  
+numpy==1.24.4
 openpyxl==3.1.2
 packaging==25.0
 pandas==2.0.3
